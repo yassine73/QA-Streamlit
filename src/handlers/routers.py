@@ -1,19 +1,26 @@
 from fastapi import APIRouter
-from src.schemas.all import Item, Document
+from src.schemas.all import Item, RawDocument
 from dotenv import load_dotenv
 import uuid
+import logging
+
+from src.services.weaviate import WeaviateService
+from src.utils import refactor_chat_history
 
 load_dotenv("config/.env")
-from src.services.weaviate import WeaviateService
-
+logger = logging.getLogger(__name__)
 chat_router = APIRouter()
 client = WeaviateService()
 
 @chat_router.post("/chat")
 async def chat(item: Item):
-    return {"message": f"Hello your message is '{item.query}'!"}
+    logger.info(f"Query: {item.query}")
+    chat_history = refactor_chat_history(item.chat_history)
+    
+    
+    return {"message": f"Hello your message is '{chat_history}'!"}
 
 @chat_router.post("/add-document")
-async def add_document(document: Document):
+async def add_document(document: RawDocument):
     document.document_id = str(uuid.uuid4())
-    return {"message": f"Hello your message is '{document.document_id}'!"}
+    return {"data": document.model_dump()}

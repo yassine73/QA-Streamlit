@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator
-from typing import List
+from typing import List, Optional
 from enum import Enum
 
 class MessageType(str, Enum):
@@ -27,16 +27,20 @@ class Item(BaseModel):
             raise ValueError(f"Invalid {field.field_name}")
         return v
 
-class Document(BaseModel):
-    document_id: str = ""
-    description: str = ""
+class RawDocument(BaseModel):
+    document_id: Optional[str] = None
+    description: Optional[str] = None
     path: str
     
     @field_validator("path")
-    def check_document_type(cls, v):
-        Ext = v.split(".")[-1].upper()
-        if Ext not in DocumentType.__members__ or not v:
-            raise ValueError("Invalid document type")
+    @classmethod
+    def Document_validator(cls, v):
+        if v not in list(DocumentType.__members__):
+            raise ValueError(f"Invalid file type")
         return v
     
+    @property
+    def document_type(self):
+        Ext: DocumentType = self.path.split(".")[-1].upper()
+        return DocumentType(Ext)
     
